@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker"
 import {
   Button,
   Container,
@@ -11,14 +10,6 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { TransitionGroup } from "react-transition-group"
 import { Lobby, LobbyUser } from "../utils"
-
-const getUsers = (n: number): LobbyUser[] =>
-  !n
-    ? []
-    : [
-        { id: faker.random.alpha(1000), name: faker.name.firstName() },
-        ...getUsers(n - 1),
-      ]
 
 const View = () => {
   const socket = useRef<WebSocket | null>(null)
