@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import _ from "lodash";
+import { WebSocket } from "ws";
 
 const MissionProfiles: Record<number, number[]> = {
   "5": [2, 3, 2, 3, 3],
@@ -18,9 +19,11 @@ type Role = GoodRole | BadRole;
 class User {
   id: string;
   name: string;
-  constructor(name: string) {
+  websocket: WebSocket | null;
+  constructor(name: string, websocket: WebSocket) {
     this.name = name;
     this.id = randomUUID();
+    this.websocket = websocket;
   }
 }
 
@@ -32,7 +35,7 @@ type Vote = {
 type Action = Vote;
 
 type Mission = {
-  suggestor: string;
+  suggester: string;
   suggested: string[];
   votes: Vote[];
 };
