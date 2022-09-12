@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import _ from "lodash";
+import _, { random } from "lodash";
 import { WebSocket } from "ws";
 
 const MissionProfiles: Record<number, number[]> = {
@@ -16,10 +16,11 @@ type GoodRole = "Loyal Servant of Arthur" | "Percival" | "Merlin";
 type BadRole = "Minion of Mordred" | "Assassin" | "Morgana";
 type Role = GoodRole | BadRole;
 
-class User {
+export class User {
   id: string;
   name: string;
   websocket: WebSocket | null;
+  role?: Role;
   constructor(name: string, websocket: WebSocket) {
     this.name = name;
     this.id = randomUUID();
@@ -46,8 +47,6 @@ type Round = {
   passed?: boolean;
 };
 
-type Player = User & { role: Role };
-
 export class Lobby {
   id: string;
   users: User[];
@@ -57,8 +56,10 @@ export class Lobby {
     this.users = [];
   }
 
-  addPlayer(name: string) {
-    this.users = [...this.users, { name, id: randomUUID() }];
+  addPlayer(name: string, websocket: WebSocket) {
+    const user = { name, websocket, id: randomUUID() };
+    this.users.push(user);
+    return user;
   }
 
   removePlayer(id: string) {
@@ -84,18 +85,21 @@ function generateRoles(n: number) {
 }
 
 export class Game {
-  id: string;
-  players: Player[];
-  rounds: Round[];
-  missionProfile: number[];
-  state: "Lobby" | "Suggest" | "Vote" | "Mission" | "Guess Merlin" | "Done";
+  lobby: Lobby;
+  rounds: Round[] = [];
+  missionProfile: number[] = [];
+  state: "Lobby" | "Suggest" | "Vote" | "Mission" | "Guess Merlin" | "Done" =
+    "Lobby";
   winner?: Side;
 
-  constructor(lobby: Lobby) {
-    this.id = lobby.id;
-    const n = lobby.users.length;
+  constructor(id: string) {
+    this.lobby = new Lobby(id);
+  }
+
+  start() {
+    const n = this.lobby.users.length;
     const roles = generateRoles(n);
-    this.players = lobby.users.map((user, index) => ({
+    this.lobby.users = this.lobby.users.map((user, index) => ({
       ...user,
       role: roles[index],
     }));
@@ -104,12 +108,20 @@ export class Game {
     this.state = "Suggest";
   }
 
-  suggest(suggestor: string, suggested: string[]) {
+  emit() {
+    this.lobby.users.forEach(
+      (user) =>
+        user.websocket?.readyState === WebSocket.OPEN &&
+        user.websocket.send(this)
+    );
+  }
+
+  suggest(suggester: string, suggested: string[]) {
     const curMissions = this.rounds.at(-1)?.missions;
     if (!curMissions) throw "No current mission";
     curMissions.push({
       suggested,
-      suggestor,
+      suggester,
       votes: [],
     });
     this.state = "Vote";
@@ -120,7 +132,7 @@ export class Game {
     const currentMission = currentRound?.missions.at(-1);
     if (!currentRound || !currentMission) throw "Missing round or mission";
     currentMission.votes.push({ user, vote });
-    if (currentMission.votes.length === this.players.length) {
+    if (currentMission.votes.length === this.lobby.users.length) {
       const goodVotes = currentMission.votes.filter((vote) => vote.vote).length;
       const badVotes = currentMission.votes.length - goodVotes;
       if (goodVotes > badVotes) {
@@ -168,7 +180,7 @@ export class Game {
   }
 
   guess(guess: string) {
-    const guessedPlayer = this.players.find((player) => player.id === guess);
+    const guessedPlayer = this.lobby.users.find((user) => user.id === guess);
     if (!guessedPlayer || !guessedPlayer.role)
       throw "No matching player to guess";
     const { role } = guessedPlayer;

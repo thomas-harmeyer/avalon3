@@ -1,15 +1,11 @@
-type Message = ServerMessage | LobbyMessage;
+type UserAction =
+  | { type: "vote"; vote: boolean }
+  | { type: "suggest"; suggested: string[] }
+  | { type: "act"; action: boolean }
+  | { type: "guess"; guess: string };
 
-type ServerMessage = {
-  to: "server";
-  type: "join";
-  data: { username: string; lobbyId: number };
-};
+type AutoAction =
+  | { type: "join"; name: string }
+  | { type: "create"; name: string };
 
-type LobbyMessage = {
-  to: number;
-  type: "game" | "lobby";
-  data: Record<string, unknown>;
-};
-
-export type { Message, ServerMessage, LobbyMessage };
+export { UserAction, AutoAction };

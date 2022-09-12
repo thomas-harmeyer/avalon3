@@ -1,46 +1,44 @@
 import WebSocket, { WebSocketServer } from "ws";
-import { addUserToLobby, lobbies, removeUserFromLobby } from "./lobby";
-import { LobbyMessage, Message } from "./request";
+import { AutoAction, UserAction } from "./request";
+import { Game, Lobby, User } from "./utils";
 
 const wss = new WebSocketServer({ port: 8080 });
 
 console.log("server started");
 
+const games: Game[] = [];
+
+const getNewGameId = () => {
+  games.forEach((_, index, a) => {
+    if (index.toString() !== a[index].lobby.id) return index;
+  });
+  return games.length;
+};
+
 wss.on("connection", (ws) => {
-  let name = "";
-  let lobbyId = -1;
-  let lobby: null | typeof lobbies[keyof typeof lobbies] = null;
+  let user: User | null = null;
+  let game: Game | null = null;
 
   console.log("socket open");
-  removeUserFromLobby(lobbyId, name);
   ws.onclose = () => {
-    if (lobby) emit({ to: lobbyId, type: "lobby", data: lobby });
+    console.log("socket closed");
+    if (user) user.websocket = null;
   };
 
   ws.onmessage = ({ data }) => {
+    console.log(data);
     if (typeof data !== "string") return;
-    const obj = <Message>JSON.parse(data);
-    if (obj.to === "server") {
-      const { data, type } = obj;
-      switch (type) {
-        case "join":
-          name = data.username;
-          lobbyId = data.lobbyId;
-          addUserToLobby(data.lobbyId, data.username, ws);
-          lobby = lobbies[lobbyId];
-          emit({ to: lobbyId, type: "lobby", data: lobby });
-          break;
-      }
-    } else if (typeof obj.to === "number") {
-      emit(obj);
+
+    const message = <UserAction | AutoAction>JSON.parse(data);
+
+    switch (message.type) {
+      case "create":
+        game = new Game(getNewGameId().toString());
+        user = game?.lobby.addPlayer(message.name, ws) ?? null;
+        break;
+      case "join":
+        user = game?.lobby.addPlayer(message.name, ws) ?? null;
+        break;
     }
   };
 });
-
-function emit({ to, type, data }: LobbyMessage) {
-  Object.values(lobbies[to]).forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send({ type, data });
-    }
-  });
-}

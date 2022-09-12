@@ -6,22 +6,35 @@ import {
   CardHeader,
   Container,
   Divider,
+  LinearProgress,
 } from "@mui/material"
+import { Message } from "@backend/request"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import useServer from "../Hooks/useServer"
+import useWebSocket, { ReadyState } from "react-use-websocket"
+
+const url = import.meta.env.VITE_WS_SERVER_URL
+if (!url) throw "missing url env var"
 
 const Landing = () => {
   const username = useMemo(() => localStorage.getItem("username"), [])
-
   const navigate = useNavigate()
   useEffect(() => {
     if (!username) navigate("/login", { replace: true })
   }, [])
 
   const [lobbies, setLobbies] = useState<string[]>([])
-  const onmessage = (lobbies: string[]) => setLobbies(lobbies)
-  useServer({ onmessage })
+  const {
+    sendJsonMessage: send,
+    lastJsonMessage: lastMsg,
+    readyState,
+  } = useWebSocket(url)
+
+  useEffect(() => {
+    if (lastMsg && lastMsg.data !== lobbies) {
+      setLobbies
+    }
+  }, [])
 
   return (
     <Container>
@@ -33,15 +46,19 @@ const Landing = () => {
       >
         <Card>
           <CardHeader title={"Welcome to Avalon, " + username} />
-          <CardActions>
-            {lobbies.map((lobby) => (
-              <Button variant="outlined">{lobby}</Button>
-            ))}
-            <Divider flexItem orientation="vertical" />
-            <Button color="secondary" variant="contained">
-              create new lobby
-            </Button>
-          </CardActions>
+          {!lobbies.length ? (
+            <LinearProgress />
+          ) : (
+            <CardActions>
+              {lobbies.map((lobby) => (
+                <Button variant="outlined">{lobby}</Button>
+              ))}
+              <Divider flexItem orientation="vertical" />
+              <Button color="secondary" variant="contained">
+                create new lobby
+              </Button>
+            </CardActions>
+          )}
         </Card>
       </Box>
     </Container>
