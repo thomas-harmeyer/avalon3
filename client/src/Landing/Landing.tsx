@@ -1,17 +1,28 @@
 import {
   Box,
-  Container,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  Typography,
-  CardActions,
   Button,
-  } from "@mui/material";
-import HelpDisplay from "./HelpDisplay";
+  Card,
+  CardActions,
+  CardHeader,
+  Container,
+  Divider,
+} from "@mui/material"
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import useServer from "../Hooks/useServer"
 
 const Landing = () => {
+  const username = useMemo(() => localStorage.getItem("username"), [])
+
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!username) navigate("/login", { replace: true })
+  }, [])
+
+  const [lobbies, setLobbies] = useState<string[]>([])
+  const onmessage = (lobbies: string[]) => setLobbies(lobbies)
+  useServer({ onmessage })
+
   return (
     <Container>
       <Box
@@ -21,26 +32,20 @@ const Landing = () => {
         alignItems="center"
       >
         <Card>
-          <CardHeader title="Welcome to Avalon" action={<HelpDisplay />} />
-          <CardContent>
-            <Typography variant="subtitle1">
-              If you're new here, welcome! Click the help icon in the corner to
-              get fimiliar with how to play. Otherwise, welcome back have fun
-              playing Avalon!
-            </Typography>
-          </CardContent>
+          <CardHeader title={"Welcome to Avalon, " + username} />
           <CardActions>
-            <Button variant="outlined">{"1"}</Button>
-            <Button variant="outlined">{"2"}</Button>
+            {lobbies.map((lobby) => (
+              <Button variant="outlined">{lobby}</Button>
+            ))}
             <Divider flexItem orientation="vertical" />
             <Button color="secondary" variant="contained">
-              {"create new lobby"}
+              create new lobby
             </Button>
           </CardActions>
         </Card>
       </Box>
     </Container>
-  );
-};
+  )
+}
 
-export default Landing;
+export default Landing

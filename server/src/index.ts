@@ -1,58 +1,46 @@
-import fs from "fs";
-import path from "path";
-import { WebSocketServer } from "ws";
-import { games, lobbies } from "./game";
+import WebSocket, { WebSocketServer } from "ws";
+import { addUserToLobby, lobbies, removeUserFromLobby } from "./lobby";
+import { LobbyMessage, Message } from "./request";
 
 const wss = new WebSocketServer({ port: 8080 });
 
 console.log("server started");
 
 wss.on("connection", (ws) => {
-  console.log("open");
-  insert("log", "o:" + new Date().toLocaleTimeString() + "\n");
+  let name = "";
+  let lobbyId = -1;
+  let lobby: null | typeof lobbies[keyof typeof lobbies] = null;
 
-  ws.on("close", () => {
-    console.log("closed");
-    insert("log", "c:" + new Date().toLocaleTimeString() + "\n");
-  });
+  console.log("socket open");
+  removeUserFromLobby(lobbyId, name);
+  ws.onclose = () => {
+    if (lobby) emit({ to: lobbyId, type: "lobby", data: lobby });
+  };
 
-  ws.on("create", ({ name }: { name: string }) => {
-    const id = getNextGameId();
-
-    insert(id, JSON.stringify({ name }));
-  });
-
-  ws.on("join", ({ lobby, name }: { lobby: string; name: string }) => {
-    insert(lobby, JSON.stringify({ name }));
-  });
-
-  ws.on("suggest", (data) => {
-    console.log("suggestion", data);
-  });
-
-  ws.send("lobby");
+  ws.onmessage = ({ data }) => {
+    if (typeof data !== "string") return;
+    const obj = <Message>JSON.parse(data);
+    if (obj.to === "server") {
+      const { data, type } = obj;
+      switch (type) {
+        case "join":
+          name = data.username;
+          lobbyId = data.lobbyId;
+          addUserToLobby(data.lobbyId, data.username, ws);
+          lobby = lobbies[lobbyId];
+          emit({ to: lobbyId, type: "lobby", data: lobby });
+          break;
+      }
+    } else if (typeof obj.to === "number") {
+      emit(obj);
+    }
+  };
 });
 
-function getNextGameId(): number {
-  const ids = getGameIds();
-  let last = -1;
-  for (const id of ids) {
-    if (last + 1 !== id) {
-      return last + 1;
+function emit({ to, type, data }: LobbyMessage) {
+  Object.values(lobbies[to]).forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send({ type, data });
     }
-    last = id;
-  }
-  return last + 1;
-}
-
-//guarenteed to be sorted
-function getGameIds(): number[] {
-  const files = fs.readdirSync("src/db");
-  return files.map((file) => parseInt(file)).sort();
-}
-
-function insert(base: number | string, data: string) {
-  const filePath = `src/db/${base}.txt`;
-  const fullPath = path.resolve(filePath);
-  fs.appendFileSync(fullPath, data);
+  });
 }

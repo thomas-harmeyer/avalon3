@@ -1,11 +1,6 @@
 import { Box } from "@mui/system"
-import { Game, Player } from "../utils"
 import { useState } from "react"
 import { Collapse } from "@mui/material"
-export type Props = {
-  game: Game
-  user: Player
-}
 
 function getRolesToShow(_role: string): string[] {
   return ["", ""]

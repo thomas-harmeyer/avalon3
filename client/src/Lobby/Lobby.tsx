@@ -1,5 +1,7 @@
 import {
+  Box,
   Button,
+  CircularProgress,
   Container,
   List,
   Paper,
@@ -9,10 +11,11 @@ import {
 } from "@mui/material"
 import { useEffect, useRef, useState } from "react"
 import { TransitionGroup } from "react-transition-group"
-import { Lobby, LobbyUser } from "../utils"
+import { Lobby } from "@backend/utils"
 
 const View = () => {
   const socket = useRef<WebSocket | null>(null)
+  const [lobby, setLobby] = useState<Lobby | null>()
 
   useEffect(() => {
     socket.current = new WebSocket("ws://localhost:8080")
@@ -22,7 +25,6 @@ const View = () => {
 
     const cur = socket.current
     return () => {
-      console.log(cur)
       cur.close()
     }
   }, [])
@@ -32,72 +34,43 @@ const View = () => {
     socket.current.onmessage = ({ data }) => console.log(data)
   }, [])
 
-  const [lobby, setLobby] = useState<Lobby>({
-    users: getUsers(10),
-    id: "12",
-    status: "Lobby",
-  })
-
   const haveDelay = useRef(true)
 
-  /*
-  function setUsers(users: LobbyUser[]) {
-    setLobby((lobby) => ({ ...lobby, users: users }))
-  }
-  */
-
-  function addUser(user: LobbyUser) {
-    setLobby((lobby) => ({ ...lobby, users: [...lobby.users, user] }))
-  }
-
-  function removeUser(userId: string) {
-    setLobby((lobby) => ({
-      ...lobby,
-      users: lobby.users.filter((user) => user.id !== userId),
-    }))
+  if (!lobby) {
+    return (
+      <Box height={1} width={1} justifyContent='center' alignItems='center'>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
     <Container maxWidth="xs">
-      <Button
-        onClick={() =>
-          addUser({
-            id: (100 * Math.random() * 100).toString(),
-            name: Math.random().toString(),
-          })
-        }
-      >
-        Add
-      </Button>
       <Stack justifyContent="space-between" height={1}>
-        <div />
         <Paper sx={{ width: 1, px: 2 }} elevation={12}>
           <List>
             <TransitionGroup>
               {lobby.users.map((user, index) => {
-                const delay = () => {
-                  const d = (haveDelay.current ? 100 * index : 0) + "ms"
+                const getDelay = () => {
+                  const delay = (haveDelay.current ? 100 * index : 0) + "ms"
                   if (index === lobby.users.length - 1) {
                     haveDelay.current = false
                   }
-                  return d
+                  return delay
                 }
                 return (
                   <Zoom
                     style={{
-                      transitionDelay: delay(),
+                      transitionDelay: getDelay(),
                     }}
                     key={user.id}
                   >
                     <Paper
                       sx={{ width: 1, my: 1, p: 1, textAlign: "center" }}
-                      key={user.id}
-                      onClick={() => removeUser(user.id)}
-                    >
+                      key={user.id}>
                       <Typography
                         color={(theme) => theme.palette.text.secondary}
-                        variant="body1"
-                      >
+                        variant="body1">
                         {user.name}
                       </Typography>
                     </Paper>

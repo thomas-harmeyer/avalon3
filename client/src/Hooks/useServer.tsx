@@ -1,28 +1,37 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect } from "react"
 
-const useServer = ({ url }: { url: string }) => {
-  const socket = useRef<WebSocket | null>(null);
+type UserServerProps = {
+  onmessage: (data: any) => void
+}
+
+const useServer = ({ onmessage }: UserServerProps) => {
+  const url = import.meta.env.VITE_WS_SERVER_URL
+  if (!url) throw "missing url env var"
+  console.log({url})
+
+  const socket = useRef<WebSocket | null>()
 
   useEffect(() => {
     if (!socket.current) {
-      socket.current = new WebSocket(url);
+      socket.current = new WebSocket(url)
 
+      socket.current.onopen = () => console.log("socket opened")
+      socket.current.onclose = () => console.log("socket closed")
 
-      const cur = socket.current;
-
+      const cur = socket.current
       return () => {
-        cur.close();
+        cur.close()
       }
     }
-  }, [socket, url]);
+  }, [socket])
 
-  useEffect(()=>{
-    if(socket.current) {
-      socket.current.onmessage = (e) => console.log(e);
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.onmessage = onmessage
     }
-  }, [socket.current]);
+  }, [socket.current, onmessage])
 
-  return socket;
+  return socket
 }
 
-export default useServer;
+export default useServer
