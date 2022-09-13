@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import _, { random } from "lodash";
+import _ from "lodash";
 import { WebSocket } from "ws";
 
 const MissionProfiles: Record<number, number[]> = {
@@ -11,9 +11,18 @@ const MissionProfiles: Record<number, number[]> = {
   "10": [3, 4, 4, 5, 5],
 };
 
-type Side = "Good" | "Bad";
-type GoodRole = "Loyal Servant of Arthur" | "Percival" | "Merlin";
-type BadRole = "Minion of Mordred" | "Assassin" | "Morgana";
+type Side = "good" | "bad";
+
+export const goodRoles = [
+  "Loyal Servant of Arthur",
+  "Percival",
+  "Merlin",
+] as const;
+type GoodRole = typeof goodRoles[number];
+
+export const badRoles = ["Minion of Mordred", "Assassin", "Morgana"] as const;
+type BadRole = typeof badRoles[number];
+
 type Role = GoodRole | BadRole;
 
 export class User {
@@ -88,8 +97,8 @@ export class Game {
   lobby: Lobby;
   rounds: Round[] = [];
   missionProfile: number[] = [];
-  state: "Lobby" | "Suggest" | "Vote" | "Mission" | "Guess Merlin" | "Done" =
-    "Lobby";
+  state: "lobby" | "suggest" | "vote" | "mission" | "guess merlin" | "done" =
+    "lobby";
   winner?: Side;
 
   constructor(id: string) {
@@ -104,8 +113,9 @@ export class Game {
       role: roles[index],
     }));
     this.rounds = [];
+    this.rounds.push({ actions: [], missions: [] });
     this.missionProfile = MissionProfiles[n];
-    this.state = "Suggest";
+    this.state = "suggest";
   }
 
   emit() {
@@ -124,7 +134,7 @@ export class Game {
       suggester,
       votes: [],
     });
-    this.state = "Vote";
+    this.state = "vote";
   }
 
   vote(user: string, vote: boolean) {
@@ -136,14 +146,14 @@ export class Game {
       const goodVotes = currentMission.votes.filter((vote) => vote.vote).length;
       const badVotes = currentMission.votes.length - goodVotes;
       if (goodVotes > badVotes) {
-        this.state = "Mission";
+        this.state = "mission";
       } else {
-        this.state = "Suggest";
+        this.state = "suggest";
         // bad wins after 5 failed suggestions
         const numOfSuggestions = currentRound.missions.length;
         if (numOfSuggestions === 5) {
-          this.state = "Done";
-          this.winner = "Bad";
+          this.state = "done";
+          this.winner = "bad";
           return;
         }
       }
@@ -160,7 +170,7 @@ export class Game {
       const numOfFailVotes = currentRound.actions.filter(
         (act) => !act.vote
       ).length;
-      currentRound.passed = numOfFailVotes > 0;
+      currentRound.passed = numOfFailVotes === 0;
 
       const numOfPassedRounds = this.rounds.filter(
         (round) => round.passed
@@ -168,12 +178,12 @@ export class Game {
       const numOfFailedRounds = this.rounds.length - numOfPassedRounds;
 
       if (numOfPassedRounds >= 3) {
-        this.state = "Guess Merlin";
+        this.state = "guess merlin";
       } else if (numOfFailedRounds >= 3) {
-        this.state = "Done";
-        this.winner = "Bad";
+        this.state = "done";
+        this.winner = "bad";
       } else {
-        this.state = "Suggest";
+        this.state = "suggest";
         this.rounds.push({ actions: [], missions: [] });
       }
     }
@@ -184,6 +194,7 @@ export class Game {
     if (!guessedPlayer || !guessedPlayer.role)
       throw "No matching player to guess";
     const { role } = guessedPlayer;
-    this.winner = role === "Merlin" ? "Good" : "Bad";
+    this.winner = role === "Merlin" ? "bad" : "good";
+    this.state = "done";
   }
 }
