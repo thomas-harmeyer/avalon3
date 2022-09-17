@@ -1,3 +1,5 @@
+import { AutoAction } from "@backend/request"
+import { Game } from "@backend/utils"
 import {
   Box,
   Button,
@@ -6,10 +8,10 @@ import {
   CardHeader,
   Container,
   Divider,
+  Grid,
   LinearProgress,
 } from "@mui/material"
-import { Message } from "@backend/request"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import useWebSocket, { ReadyState } from "react-use-websocket"
 
@@ -17,24 +19,70 @@ const url = import.meta.env.VITE_WS_SERVER_URL
 if (!url) throw "missing url env var"
 
 const Landing = () => {
-  const username = useMemo(() => localStorage.getItem("username"), [])
+  const name = useMemo(() => localStorage.getItem("username"), [])
   const navigate = useNavigate()
-  useEffect(() => {
-    if (!username) navigate("/login", { replace: true })
-  }, [])
-
-  const [lobbies, setLobbies] = useState<string[]>([])
+  const [lobbies, setLobbies] = useState<Game[] | null>(null)
   const {
-    sendJsonMessage: send,
+    sendJsonMessage: sendMsg,
     lastJsonMessage: lastMsg,
     readyState,
   } = useWebSocket(url)
 
+  const createLobby = useCallback(() => {
+    if (!name) return
+    const msg: AutoAction = { type: "create", name }
+    sendMsg(msg)
+  }, [name, sendMsg])
+
+  const joinLobby = useCallback(
+    (lobbyId: number) => () => {
+      if (!name) return
+      const msg: AutoAction = { type: "join", name, lobbyId }
+      sendMsg(msg)
+    },
+    [name, sendMsg]
+  )
+
   useEffect(() => {
-    if (lastMsg && lastMsg.data !== lobbies) {
-      setLobbies
+    const msg: AutoAction = { type: "connect" }
+    sendMsg(msg)
+  }, [sendMsg])
+
+  useEffect(() => {
+    if (lastMsg != null) {
+      if (Array.isArray(lastMsg)) {
+        setLobbies(lastMsg as unknown as Game[])
+      } else {
+        setLobbies([lastMsg as unknown as Game])
+      }
+      console.log(lastMsg)
     }
-  }, [])
+  }, [lastMsg])
+
+  useEffect(() => {
+    if (!name) {
+      console.log("navigating to login")
+      navigate("/login")
+    }
+  }, [name, navigate])
+
+  const isInLobby = useMemo(
+    () =>
+      lobbies != null &&
+      !(
+        lobbies.find((lobby) =>
+          lobby.lobby.users.find((user) => user.name === name)
+        ) == null
+      ),
+    [lobbies, name]
+  )
+
+  useEffect(() => {
+    if (isInLobby) {
+      console.log("navigating to lobby")
+      navigate("/game")
+    }
+  }, [isInLobby, navigate])
 
   return (
     <Container>
@@ -45,18 +93,34 @@ const Landing = () => {
         alignItems="center"
       >
         <Card>
-          <CardHeader title={"Welcome to Avalon, " + username} />
-          {!lobbies.length ? (
+          <CardHeader title={"Welcome to Avalon, " + name} />
+          {lobbies == null || readyState !== ReadyState.OPEN ? (
             <LinearProgress />
           ) : (
             <CardActions>
-              {lobbies.map((lobby) => (
-                <Button variant="outlined">{lobby}</Button>
-              ))}
-              <Divider flexItem orientation="vertical" />
-              <Button color="secondary" variant="contained">
-                create new lobby
-              </Button>
+              <Grid spacing={2} container>
+                {lobbies.map((_, index) => (
+                  <Grid item xs={3} key={index}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      onClick={joinLobby(index)}
+                    >
+                      {index}
+                    </Button>
+                  </Grid>
+                ))}
+                <Grid item xs>
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    onClick={createLobby}
+                    fullWidth
+                  >
+                    create new lobby
+                  </Button>
+                </Grid>
+              </Grid>
             </CardActions>
           )}
         </Card>

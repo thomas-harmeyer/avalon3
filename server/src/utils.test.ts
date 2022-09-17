@@ -22,16 +22,16 @@ const getMissionUsers = () =>
 
 const suggestMission = () => {
   game.suggest(
-    game.lobby.users[0].id,
+    game.lobby.users[0],
     getMissionUsers().map((user) => user.id)
   );
 };
 
 const voteForMission = (vote: boolean) =>
-  game.lobby.users.forEach((user) => game.vote(user.id, vote));
+  game.lobby.users.forEach((user) => game.vote(user, vote));
 
 const actOnMission = (action: boolean) =>
-  getMissionUsers().forEach((user) => game.act(user.id, action));
+  getMissionUsers().forEach((user) => game.act(user, action));
 
 beforeEach(() => {
   game = new Game("test");
@@ -116,7 +116,7 @@ for (let n = 5; n <= 10; n++) {
                 suggestMission();
                 expect(game.state).toBe("vote");
                 voteForMission(true);
-                expect(game.state).toBe("mission");
+                expect(game.state).toBe("act");
                 actOnMission(!goodWins);
                 expect(game.state).toBe("suggest");
               }
@@ -126,12 +126,12 @@ for (let n = 5; n <= 10; n++) {
               suggestMission();
               expect(game.state).toBe("vote");
               voteForMission(true);
-              expect(game.state).toBe("mission");
+              expect(game.state).toBe("act");
               actOnMission(goodWins);
               if (n < 2) expect(game.state).toBe("suggest");
             });
             if (goodWins) {
-              expect(game.state).toBe("guess merlin");
+              expect(game.state).toBe("guess");
               const notMerlin = game.lobby.users.find(
                 (user) => user.role !== "Merlin"
               );
@@ -154,6 +154,12 @@ for (let n = 5; n <= 10; n++) {
       ).length;
       const numBad = n - numGood;
       expect(numGood).toBeGreaterThan(numBad);
+    });
+
+    test("Get user by id", () => {
+      startGame(n);
+      const users = game.lobby.users;
+      users.forEach((user) => expect(game.getUserFromId(user.id)).toBe(user));
     });
   });
 }

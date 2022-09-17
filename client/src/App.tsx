@@ -1,7 +1,6 @@
 //views
-import GameView from "./Game/Game"
+import Game from "./Game/Game"
 import Landing from "./Landing/Landing"
-import Lobby from "./Lobby/Lobby"
 import Login from "./Login/Login"
 
 //Contexts
@@ -39,12 +38,11 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/lobby" element={<Lobby />} />
-          <Route path="/game" element={<GameView />} />
+          <Route path="/game" element={<Game />} />
         </Routes>
       </Router>
     </ThemeProvider>
   )
 }
 
-export default App;
+export default App

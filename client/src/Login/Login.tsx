@@ -7,8 +7,11 @@ const Login = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (hasUsername) navigate("/", { replace: true })
-  }, [])
+    if (hasUsername) {
+      console.log("navigating to /")
+      navigate("/", { replace: true })
+    }
+  }, [hasUsername, navigate])
 
   const [input, setInput] = useState("")
 
@@ -17,6 +20,7 @@ const Login = () => {
 
   const handleSubmit = () => {
     localStorage.setItem("username", input)
+    console.log("navigating to /")
     navigate("/")
   }
 

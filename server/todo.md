@@ -1,0 +1,2 @@
+- [ ] Handle when users disconnect is lobby vs game
+- [ ] make lobby names rando    m

@@ -1,0 +1,7 @@
+- [x] add icons to scoreboard
+- [ ] scoreboard
+- [ ] navbar
+- [ ] vote
+- [ ] act
+- [ ] guess merlin
+- [ ] night menu

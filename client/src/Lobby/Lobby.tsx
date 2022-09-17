@@ -1,91 +1,49 @@
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  List,
-  Paper,
-  Stack,
-  Typography,
-  Zoom,
-} from "@mui/material"
-import { useEffect, useRef, useState } from "react"
-import { TransitionGroup } from "react-transition-group"
-import { Lobby } from "@backend/utils"
+import { Alert, Box, Container, Typography } from "@mui/material"
+import { useCallback, useState } from "react"
+import Body from "../Body"
 
-const View = () => {
-  const socket = useRef<WebSocket | null>(null)
-  const [lobby, setLobby] = useState<Lobby | null>()
+const url = import.meta.env.VITE_WS_SERVER_URL
+if (url === undefined) throw new Error("missing url env var")
 
-  useEffect(() => {
-    socket.current = new WebSocket("ws://localhost:8080")
+type LobbyProps = {
+  users: string[]
+  id: string
+  start(): void
+}
+const Lobby = ({ users, id, start }: LobbyProps) => {
+  const [showWarning, setShowWarning] = useState(false)
 
-    socket.current.onopen = () => console.log("socket open")
-    socket.current.onclose = () => console.log("socket closed")
-
-    const cur = socket.current
-    return () => {
-      cur.close()
+  const startGame = useCallback(() => {
+    if (5 <= users.length && users.length <= 10) {
+      start()
+    } else {
+      setShowWarning(true)
     }
-  }, [])
-
-  useEffect(() => {
-    if (!socket.current) return
-    socket.current.onmessage = ({ data }) => console.log(data)
-  }, [])
-
-  const haveDelay = useRef(true)
-
-  if (!lobby) {
-    return (
-      <Box height={1} width={1} justifyContent='center' alignItems='center'>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  }, [start, users.length])
 
   return (
     <Container maxWidth="xs">
-      <Stack justifyContent="space-between" height={1}>
-        <Paper sx={{ width: 1, px: 2 }} elevation={12}>
-          <List>
-            <TransitionGroup>
-              {lobby.users.map((user, index) => {
-                const getDelay = () => {
-                  const delay = (haveDelay.current ? 100 * index : 0) + "ms"
-                  if (index === lobby.users.length - 1) {
-                    haveDelay.current = false
-                  }
-                  return delay
-                }
-                return (
-                  <Zoom
-                    style={{
-                      transitionDelay: getDelay(),
-                    }}
-                    key={user.id}
-                  >
-                    <Paper
-                      sx={{ width: 1, my: 1, p: 1, textAlign: "center" }}
-                      key={user.id}>
-                      <Typography
-                        color={(theme) => theme.palette.text.secondary}
-                        variant="body1">
-                        {user.name}
-                      </Typography>
-                    </Paper>
-                  </Zoom>
-                )
-              })}
-            </TransitionGroup>
-          </List>
-        </Paper>
-        <Button variant="contained" sx={{ my: 2, width: 1, p: 2 }}>
-          Start Game
-        </Button>
-      </Stack>
+      <Box display="flex" height={1} p={1} flexDirection="column">
+        <Box></Box>
+        {showWarning && (
+          <Alert severity="warning" onClose={() => setShowWarning(false)}>
+            {users.length < 5
+              ? "You need at least 5 players to begin a game"
+              : "You can have at most 10 players in one game"}
+          </Alert>
+        )}
+        <Body
+          state={
+            <Typography variant="h4" color="snow">
+              Lobby: {id}
+            </Typography>
+          }
+          users={users}
+          accept={{ handle: startGame, label: "Start Game" }}
+        />
+      </Box>
     </Container>
   )
 }
 
-export default View
+export default Lobby

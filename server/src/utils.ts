@@ -2,6 +2,19 @@ import { randomUUID } from "crypto";
 import _ from "lodash";
 import { WebSocket } from "ws";
 
+export const removeSocket = (g: Game) => ({
+  ...g,
+  lobby: {
+    ...g.lobby,
+    users: [
+      ...g.lobby.users.map((user) => ({
+        ...user,
+        websocket: null,
+      })),
+    ],
+  },
+});
+
 const MissionProfiles: Record<number, number[]> = {
   "5": [2, 3, 2, 3, 3],
   "6": [2, 3, 4, 3, 4],
@@ -38,15 +51,15 @@ export class User {
 }
 
 type Vote = {
-  user: string;
+  user: User;
   vote: boolean;
 };
 
 type Action = Vote;
 
 type Mission = {
-  suggester: string;
-  suggested: string[];
+  suggester: User;
+  suggested: User[];
   votes: Vote[];
 };
 
@@ -97,12 +110,17 @@ export class Game {
   lobby: Lobby;
   rounds: Round[] = [];
   missionProfile: number[] = [];
-  state: "lobby" | "suggest" | "vote" | "mission" | "guess merlin" | "done" =
-    "lobby";
+  state: "lobby" | "suggest" | "vote" | "act" | "guess" | "done" = "lobby";
   winner?: Side;
 
   constructor(id: string) {
     this.lobby = new Lobby(id);
+  }
+
+  getUserFromId(id: string) {
+    const user = this.lobby.users.find((user) => user.id === id);
+    if (!user) throw "missing user";
+    return user;
   }
 
   start() {
@@ -119,25 +137,31 @@ export class Game {
   }
 
   emit() {
-    this.lobby.users.forEach(
-      (user) =>
-        user.websocket?.readyState === WebSocket.OPEN &&
-        user.websocket.send(this)
-    );
+    this.lobby.users.forEach((user) => {
+      user.websocket?.readyState === WebSocket.OPEN &&
+        user.websocket.send(JSON.stringify(removeSocket(this)));
+    });
   }
 
-  suggest(suggester: string, suggested: string[]) {
+  suggest(suggester: User, suggestedIds: string[]) {
     const curMissions = this.rounds.at(-1)?.missions;
     if (!curMissions) throw "No current mission";
-    curMissions.push({
-      suggested,
-      suggester,
-      votes: [],
-    });
-    this.state = "vote";
+    try {
+      const suggested = suggestedIds.map((suggestion) =>
+        this.getUserFromId(suggestion)
+      );
+      curMissions.push({
+        suggested: suggested,
+        suggester: suggester,
+        votes: [],
+      });
+      this.state = "vote";
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  vote(user: string, vote: boolean) {
+  vote(user: User, vote: boolean) {
     const currentRound = this.rounds.at(-1);
     const currentMission = currentRound?.missions.at(-1);
     if (!currentRound || !currentMission) throw "Missing round or mission";
@@ -146,7 +170,7 @@ export class Game {
       const goodVotes = currentMission.votes.filter((vote) => vote.vote).length;
       const badVotes = currentMission.votes.length - goodVotes;
       if (goodVotes > badVotes) {
-        this.state = "mission";
+        this.state = "act";
       } else {
         this.state = "suggest";
         // bad wins after 5 failed suggestions
@@ -160,7 +184,7 @@ export class Game {
     }
   }
 
-  act(user: string, action: boolean) {
+  act(user: User, action: boolean) {
     const currentRound = this.rounds.at(-1);
     if (!currentRound) throw "No round";
     const actions = currentRound.actions;
@@ -178,7 +202,7 @@ export class Game {
       const numOfFailedRounds = this.rounds.length - numOfPassedRounds;
 
       if (numOfPassedRounds >= 3) {
-        this.state = "guess merlin";
+        this.state = "guess";
       } else if (numOfFailedRounds >= 3) {
         this.state = "done";
         this.winner = "bad";
@@ -190,11 +214,11 @@ export class Game {
   }
 
   guess(guess: string) {
-    const guessedPlayer = this.lobby.users.find((user) => user.id === guess);
-    if (!guessedPlayer || !guessedPlayer.role)
-      throw "No matching player to guess";
-    const { role } = guessedPlayer;
-    this.winner = role === "Merlin" ? "bad" : "good";
-    this.state = "done";
+    try {
+      const guessedPlayer = this.getUserFromId(guess);
+      const { role } = guessedPlayer;
+      this.winner = role === "Merlin" ? "bad" : "good";
+      this.state = "done";
+    } catch (e) {console.error(e)}
   }
 }
