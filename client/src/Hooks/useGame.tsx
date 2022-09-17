@@ -7,7 +7,6 @@ import { JsonValue } from "react-use-websocket/dist/lib/types"
 
 const url = import.meta.env.VITE_WS_SERVER_URL
 if (url === undefined) throw new Error("missing url env var")
-
 const useGame = (name: string | null) => {
   const navigate = useNavigate()
   const [game, setGame] = useState<Game | null>(null)

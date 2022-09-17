@@ -1,4 +1,4 @@
-import { Game as GameType, goodRoles } from "@backend/utils"
+import { goodRoles } from "@backend/utils"
 import {
   AppBar,
   AppBarProps,
@@ -24,9 +24,16 @@ export const BottomBar = styled(AppBar)<AppBarProps>(() => ({
   bottom: 0,
 }))
 
+type AllNonNullable<T> = {
+  [P in keyof T]: NonNullable<T[P]>
+}
+
+type UsedGame = AllNonNullable<ReturnType<typeof useGame>>
+
 //make type with game required
-const RenderGame = ({ usedGame }: { usedGame: ReturnType<typeof useGame> }) => {
-  const { act, guess, start, suggest, vote } = usedGame
+const RenderGame = ({ usedGame }: { usedGame: UsedGame }) => {
+  const { game, act, guess, start, suggest, vote } = usedGame
+
   const title = useMemo(
     () => game.state.charAt(0).toUpperCase() + game.state.substring(1),
     [game.state]
