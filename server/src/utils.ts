@@ -31,6 +31,7 @@ export const goodRoles = [
   "Percival",
   "Merlin",
 ] as const;
+
 type GoodRole = typeof goodRoles[number];
 
 export const badRoles = ["Minion of Mordred", "Assassin", "Morgana"] as const;
@@ -219,6 +220,8 @@ export class Game {
       const { role } = guessedPlayer;
       this.winner = role === "Merlin" ? "bad" : "good";
       this.state = "done";
-    } catch (e) {console.error(e)}
+    } catch (e) {
+      console.error(e);
+    }
   }
 }

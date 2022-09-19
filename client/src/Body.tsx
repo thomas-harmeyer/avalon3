@@ -7,22 +7,26 @@ import {
   List,
   Paper,
   Stack,
+  styled,
   Toolbar,
   Typography,
   Zoom,
 } from "@mui/material"
 import { useRef } from "react"
 import { TransitionGroup } from "react-transition-group"
-type Action = {
+
+const Offset = styled("div")(({ theme }) => theme.mixins.toolbar)
+
+export type Action = {
   handle(): void
   label: React.ReactNode
 }
 
-type BodyProps = {
+export type BodyProps = {
   title: string
   users: User[]
   handleUserClick(user: User): void
-  warning?: { show: boolean; label: string }
+  warning: { label?: string; handleClose(): void }
   accept: Action
   reject?: Action
 }
@@ -38,18 +42,24 @@ const ActionView = (props: Action) => {
 const Body = (props: BodyProps) => {
   const haveDelay = useRef(true)
   const handleClick = (user: User) => () => props.handleUserClick(user)
+  console.log(props)
   return (
     <Stack justifyContent="space-between" flexGrow={1} flexBasis={1} py={2}>
       {props.title && (
-        <AppBar>
-          <Toolbar>{props.title}</Toolbar>
-        </AppBar>
+        <>
+          <AppBar>
+            <Toolbar>{props.title}</Toolbar>
+          </AppBar>
+          <Offset />
+        </>
       )}
       <Paper sx={{ width: 1, px: 2 }} elevation={12}>
         <List>
           <TransitionGroup>
-            {props.warning?.show && (
-              <Alert severity="warning">props.warning.label</Alert>
+            {!!props.warning.label && (
+              <Alert severity="warning" onClose={props.warning.handleClose}>
+                {props.warning.label}
+              </Alert>
             )}
             {props.users.map((user, index) => {
               const getDelay = () => {
