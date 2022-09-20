@@ -1,2 +1,4 @@
 - [ ] Handle when users disconnect is lobby vs game
 - [ ] make lobby names random words
+- [ ] don't allow users to vote twice
+- [ ] users should probably have the uuid stored on their own devices or some actual auth or something idk

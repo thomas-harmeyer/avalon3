@@ -162,10 +162,22 @@ export class Game {
     }
   }
 
+  voteAll(vote: boolean) {
+    console.error("WARNING THIS IS A TEST METHOD");
+    this.lobby.users.forEach((user) => this.vote(user, vote));
+  }
+  actAll(action: boolean) {
+    this.rounds
+      .at(-1)
+      ?.missions.at(-1)
+      ?.suggested.forEach((user) => this.act(user, action));
+  }
+
   vote(user: User, vote: boolean) {
     const currentRound = this.rounds.at(-1);
     const currentMission = currentRound?.missions.at(-1);
     if (!currentRound || !currentMission) throw "Missing round or mission";
+    if (currentMission.votes.find((vote) => vote.user.id === user.id)) return;
     currentMission.votes.push({ user, vote });
     if (currentMission.votes.length === this.lobby.users.length) {
       const goodVotes = currentMission.votes.filter((vote) => vote.vote).length;
@@ -189,6 +201,12 @@ export class Game {
     const currentRound = this.rounds.at(-1);
     if (!currentRound) throw "No round";
     const actions = currentRound.actions;
+    if (
+      !currentRound.missions
+        .at(-1)
+        ?.suggested.find((user) => user.id === user.id)
+    )
+      return;
     actions.push({ user, vote: action });
     //if last action
     if (actions.length === this.missionProfile[this.rounds.length - 1]) {

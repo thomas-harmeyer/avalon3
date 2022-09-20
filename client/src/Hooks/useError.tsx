@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { BodyProps } from "../Body"
 
 const errorMessages = {
   suggest: (countOnMission: number) =>
@@ -8,9 +7,10 @@ const errorMessages = {
     if (countOfPlayersInLobby > 10) return "Max of 10 players in one game."
     return "Need at least 5 players to start the game."
   },
+  guess: () => "Select a user to guess",
 }
 
-type Warning = BodyProps["warning"]
+type Warning = { label?: string; handleClose(): void }
 
 function useError(state: null | string) {
   const [error, setError] = useState<null | string>(null)

@@ -1,3 +1,4 @@
+import _ from "lodash";
 import WebSocket, { WebSocketServer } from "ws";
 import { AutoAction, UserAction } from "./request";
 import { Game, removeSocket, User } from "./utils";
@@ -77,8 +78,13 @@ wss.on("connection", (ws) => {
         game = games[message.lobbyId];
       }
 
-      user = game.lobby.addPlayer(message.name, ws) ?? null;
-      game.emit();
+      if (game.state === "lobby") {
+        _.times(4, (n) => {
+          game?.lobby.addPlayer(message.name + n, ws);
+        });
+        user = game.lobby.addPlayer(message.name, ws) ?? null;
+        game.emit();
+      }
       return;
     }
 
@@ -104,10 +110,12 @@ wss.on("connection", (ws) => {
         game.suggest(user, message.suggested);
         break;
       case "vote":
-        game.vote(user, message.vote);
+        //game.vote(user, message.vote);
+        game.voteAll(message.vote);
         break;
       case "act":
-        game.act(user, message.action);
+        //game.act(user, message.action);
+        game.actAll(message.action);
         break;
       case "guess":
         game.guess(message.guess);

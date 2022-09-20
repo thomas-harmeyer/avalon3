@@ -1,15 +1,16 @@
 import { AutoAction } from "@backend/request"
 import { Game } from "@backend/utils"
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardActions,
   CardHeader,
   Container,
-  Divider,
   Grid,
   LinearProgress,
+  Snackbar,
 } from "@mui/material"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -18,10 +19,24 @@ import useWebSocket, { ReadyState } from "react-use-websocket"
 const url = import.meta.env.VITE_WS_SERVER_URL
 if (!url) throw "missing url env var"
 
+function DoubleNameToast({
+  handleClose,
+  name,
+}: {
+  handleClose(): void
+  name: string
+}) {
+  return (
+    <Snackbar open onClose={handleClose}>
+      <Alert>There is already someone named {name} is that lobby</Alert>
+    </Snackbar>
+  )
+}
 const Landing = () => {
   const name = useMemo(() => localStorage.getItem("username"), [])
   const navigate = useNavigate()
   const [lobbies, setLobbies] = useState<Game[] | null>(null)
+  const [showDoubleNameToast, setShowDoubleNameToast] = useState(false)
   const {
     sendJsonMessage: sendMsg,
     lastJsonMessage: lastMsg,
@@ -35,9 +50,17 @@ const Landing = () => {
   }, [name, sendMsg])
 
   const joinLobby = useCallback(
-    (lobbyId: number) => () => {
+    (lobby: Game["lobby"]) => () => {
       if (!name) return
-      const msg: AutoAction = { type: "join", name, lobbyId }
+      if (lobby.users.find((user) => user.name === name)) {
+        setShowDoubleNameToast(true)
+        return
+      }
+      const msg: AutoAction = {
+        type: "join",
+        name,
+        lobbyId: parseInt(lobby.id),
+      }
       sendMsg(msg)
     },
     [name, sendMsg]
@@ -99,12 +122,12 @@ const Landing = () => {
           ) : (
             <CardActions>
               <Grid spacing={2} container>
-                {lobbies.map((_, index) => (
+                {lobbies.map(({ lobby }, index) => (
                   <Grid item xs={3} key={index}>
                     <Button
                       fullWidth
                       variant="outlined"
-                      onClick={joinLobby(index)}
+                      onClick={joinLobby(lobby)}
                     >
                       {index}
                     </Button>
@@ -125,6 +148,12 @@ const Landing = () => {
           )}
         </Card>
       </Box>
+      {showDoubleNameToast && (
+        <DoubleNameToast
+          name={name ?? ""}
+          handleClose={() => setShowDoubleNameToast(false)}
+        />
+      )}
     </Container>
   )
 }

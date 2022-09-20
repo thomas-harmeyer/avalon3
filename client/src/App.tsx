@@ -1,6 +1,7 @@
 //views
 import Game from "./Game/Game"
 import Landing from "./Landing/Landing"
+
 import Login from "./Login/Login"
 
 //Contexts
@@ -9,10 +10,10 @@ import "@fontsource/roboto/300.css"
 import "@fontsource/roboto/400.css"
 import "@fontsource/roboto/500.css"
 import "@fontsource/roboto/700.css"
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom"
 
 //css
-import { createTheme, CssBaseline, ThemeProvider } from "@mui/material"
+import { CssBaseline, ThemeProvider, createTheme } from "@mui/material"
 import "./App.css"
 
 function App() {
