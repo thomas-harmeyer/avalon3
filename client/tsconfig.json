@@ -2,7 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@backend/*": [
-        "./src/FromBackend"
+        "../server/src/*"
       ]
     },
     "target": "ESNext",
