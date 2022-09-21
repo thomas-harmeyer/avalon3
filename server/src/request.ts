@@ -11,4 +11,4 @@ type AutoAction =
   | { type: "create"; name: string }
   | { type: "connect"; name?: string };
 
-export { UserAction, AutoAction };
+export type { UserAction, AutoAction };
