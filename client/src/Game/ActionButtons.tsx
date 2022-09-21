@@ -1,6 +1,6 @@
 import { Game, User } from "@backend/utils"
-import { Check, Close, ThumbUp, ThumbDown } from "@mui/icons-material"
-import { Box, Button, Fab, Zoom } from "@mui/material"
+import { Check, Close, ThumbDown, ThumbUp } from "@mui/icons-material"
+import { Box, Fab, Zoom } from "@mui/material"
 import { useCallback, useMemo } from "react"
 
 export type Action = {
@@ -16,7 +16,7 @@ export type BodyProps = {
 
 const acceptLabelMap = {
   act: <Check color="action" />,
-  done: "",
+  done: "Back to Lobby",
   guess: "Guess",
   lobby: "Start Game",
   suggest: "Suggest Mission",
@@ -26,31 +26,83 @@ const acceptLabelMap = {
 const rejectLabelMap = {
   act: <Close />,
   vote: <ThumbDown color="action" />,
+  lobby: "Leave Lobby",
 }
 
 type Props = {
   game: Game
-  handleError(error: string): void
   suggestedUsers: string[]
+  guessUser: string | null
   suggest(): void
   act(action: boolean): void
   vote(vote: boolean): void
   guess(): void
   start(): void
+  leave(): void
+  navigateToLobby(): void
   name: string
 }
 function ActionButtons({
   game,
+  suggestedUsers,
+  guessUser,
   suggest,
   act,
   vote,
   guess,
   start,
+  leave,
+  navigateToLobby,
   name,
 }: Props) {
   const currentMission = useMemo(
-    () => game?.rounds.at(-1)?.missions.at(-1) ?? "",
-    [game?.rounds]
+    () => game.rounds.at(-1)?.missions.at(-1) ?? null,
+    [game.rounds]
+  )
+
+  const showButtons = useMemo(
+    () =>
+      ({
+        act:
+          !!currentMission?.suggested.find(
+            (suggestion) => suggestion.name === name
+          ) &&
+          !game.rounds
+            .at(-1)
+            ?.actions.find((action) => action.user.name === name),
+        done: true,
+        guess:
+          game.lobby.users.find((user) => user.name === name)?.role ===
+          "Assassin",
+        lobby: true,
+        suggest: true,
+        vote: !game.rounds
+          .at(-1)
+          ?.missions.at(-1)
+          ?.votes.find((vote) => vote.user.name === name),
+      }[game.state]),
+    [currentMission?.suggested, game.lobby.users, game.rounds, game.state, name]
+  )
+
+  const disableAcceptButton = useMemo(
+    () =>
+      ({
+        act: false,
+        done: false,
+        guess: !guessUser,
+        lobby: game.lobby.users.length > 10 || game.lobby.users.length < 5,
+        suggest:
+          suggestedUsers.length !== game.missionProfile[game.rounds.length - 1],
+        vote: false,
+      }[game.state]),
+    [
+      game.lobby.users.length,
+      game.missionProfile,
+      game.rounds.length,
+      game.state,
+      guessUser,
+      suggestedUsers,
+    ]
   )
 
   const handleAccept: Action["handle"] = useCallback(() => {
@@ -73,8 +125,11 @@ function ActionButtons({
       case "guess":
         guess()
         break
+      case "done":
+        navigateToLobby()
+        break
     }
-  }, [act, game.state, guess, start, suggest, vote])
+  }, [act, game.state, guess, navigateToLobby, start, suggest, vote])
 
   const handleReject: Action["handle"] = useCallback(() => {
     switch (game.state) {
@@ -84,8 +139,11 @@ function ActionButtons({
       case "act":
         act(false)
         break
+      case "lobby":
+        leave()
+        break
     }
-  }, [act, game.state, vote])
+  }, [act, game.state, leave, vote])
 
   const accept: Action = useMemo(
     () => ({ label: acceptLabelMap[game.state], handle: handleAccept }),
@@ -94,53 +152,46 @@ function ActionButtons({
 
   const reject: Action | null = useMemo(
     () =>
-      game.state === "act" || game.state === "vote"
+      game.state === "act" || game.state === "vote" || game.state === "lobby"
         ? { label: rejectLabelMap[game.state], handle: handleReject }
         : null,
     [game.state, handleReject]
   )
 
-  const showActionButtons = useMemo(() => {
-    switch (game.state) {
-      case "vote":
-        if (!currentMission) throw Error("missing current mission")
-        return !currentMission.votes.find((vote) => vote.user.name === name)
-      case "act": {
-        const currentRound = game.rounds.at(-1)
-        if (!currentRound) throw Error("missing current round")
-        return !currentRound.actions.find((action) => action.user.name === name)
-      }
-    }
-    return true
-  }, [currentMission, game.rounds, game.state, name])
-
   return (
-    <Box display="flex" flexDirection="row">
+    <Box
+      display="flex"
+      flexDirection="row"
+      alignItems="flex-end"
+      justifyContent="center"
+    >
       {reject && (
-        <Zoom in={showActionButtons}>
-          <Box width={1}>
-            <ActionButton {...reject} reject />
-          </Box>
-        </Zoom>
+        <>
+          <Zoom in={showButtons}>
+            <Box>
+              <ActionButton {...reject} reject />
+            </Box>
+          </Zoom>
+          <Box p={1} />
+        </>
       )}
-      <Zoom in={showActionButtons}>
-        <Box width={1}>
-          <ActionButton {...accept} />
+      <Zoom in={showButtons}>
+        <Box>
+          <ActionButton {...accept} disabled={disableAcceptButton} />
         </Box>
       </Zoom>
     </Box>
   )
 }
 
-type ButtonProps = Action & { reject?: boolean }
+type ButtonProps = Action & { reject?: boolean; disabled?: boolean }
 const ActionButton = (props: ButtonProps) => {
   return (
     <Fab
-      variant="contained"
+      disabled={!!props.disabled}
       color={props.reject ? "error" : "primary"}
-      sx={{ my: 1, p: 1, borderRadius: 0 }}
       onClick={props.handle}
-      fullWidth
+      variant={typeof props.label === "string" ? "extended" : "circular"}
     >
       {props.label}
     </Fab>

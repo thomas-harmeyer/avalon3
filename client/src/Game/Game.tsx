@@ -1,13 +1,4 @@
-import {
-  Box,
-  Card,
-  CardActionArea,
-  CardActions,
-  CardContent,
-  CircularProgress,
-  Container,
-  Paper,
-} from "@mui/material"
+import { Box, CircularProgress, Container, Paper } from "@mui/material"
 import { useState } from "react"
 import { errorMessages, useError } from "../Hooks/useError"
 import useGame from "../Hooks/useGame"
@@ -37,7 +28,7 @@ const RenderGame = ({
 }) => {
   const [suggestedUsers, setSuggestedUsers] = useState<string[]>([])
   const [guessUser, setGuessUser] = useState<null | string>(null)
-  const { game, act, guess, start, suggest, vote } = usedGame
+  const { game, act, guess, start, suggest, vote, leave,navigateToLobby } = usedGame
   const { warning, handleError } = useError(game?.state ?? null)
 
   function handleStartGame() {
@@ -68,39 +59,39 @@ const RenderGame = ({
   return (
     <Container>
       <Box flexDirection="column" display="flex" height={1} width={1}>
-        <Navbar game={game} />
+        <Navbar game={game} name={name} />
         <Box pb={3} pt={1}>
           <ScoreBoard
+            numberOfPlayers={game.lobby.users.length}
             state={game.state}
             missionProfile={game.missionProfile}
             rounds={game.rounds}
           />
         </Box>
         <Box display="flex" flexDirection="column" flexGrow={1} flexBasis={1}>
-          <Paper>
-            <Box p={1}>
-              <ActionArea
+             <ActionArea
+                name={name}
                 game={game}
                 setGuessUser={setGuessUser}
                 setSuggestedUsers={setSuggestedUsers}
                 guessUser={guessUser}
                 suggestedUsers={suggestedUsers}
               />
-            </Box>
-          </Paper>
-          <Box flexGrow={1} />
-          <Box pb={2}>
+          <Box py={1} flexGrow={1} />
+          <Box pb={2} key={game.state}>
             <Warning {...warning} />
             <ActionButtons
+              guessUser={guessUser}
+              suggestedUsers={suggestedUsers}
               name={name}
               game={game}
-              handleError={handleError}
-              suggestedUsers={suggestedUsers}
               suggest={handleSuggest}
+              leave={leave}
               act={act}
               vote={vote}
               guess={handleGuess}
               start={handleStartGame}
+              navigateToLobby={navigateToLobby}
             />
           </Box>
         </Box>

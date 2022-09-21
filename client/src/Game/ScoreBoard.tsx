@@ -11,16 +11,25 @@ import {
   Typography,
   Zoom,
 } from "@mui/material"
+import { useState } from "react"
 import { TransitionGroup } from "react-transition-group"
+import VoteModal from "./VoteModal"
 
 type ScoreBoardProps = {
   rounds: Game["rounds"]
+  numberOfPlayers: number
   state: Game["state"]
   missionProfile: Game["missionProfile"]
 }
 const ScoreBoard = (props: ScoreBoardProps) => {
+  const [voteModalIndex, setVoteModalIndex] = useState<number | null>(null)
+  console.log(voteModalIndex)
   if (props.state === "lobby") return null
 
+  const handleVoteModalClick = (index: number) => () => {
+    if (index >= props.rounds.length) return
+    setVoteModalIndex(index)
+  }
   function getResult(index: number) {
     const result = props.rounds[index]?.passed
     if (result === undefined) return result
@@ -30,6 +39,15 @@ const ScoreBoard = (props: ScoreBoardProps) => {
 
   return (
     <Paper>
+      <VoteModal
+        numberOfPlayers={props.numberOfPlayers}
+        missions={
+          voteModalIndex === null ? null : props.rounds[voteModalIndex].missions
+        }
+        handleClose={() => setVoteModalIndex(null)}
+        show={voteModalIndex !== null}
+      />
+
       <Stack justifyContent="space-evenly" direction="row" p={1}>
         {props.missionProfile.map((numberOfPlayers, index) => (
           <ScoreBox
@@ -38,6 +56,7 @@ const ScoreBoard = (props: ScoreBoardProps) => {
             result={getResult(index)}
             round={props.rounds[index]}
             numOfPlayers={numberOfPlayers}
+            onClick={handleVoteModalClick(index)}
           />
         ))}
       </Stack>
@@ -50,6 +69,7 @@ type ScoreBoxProps = {
   round: Game["rounds"][number] | undefined
   numOfPlayers: number
   state: Game["state"]
+  onClick(): void
 }
 function ScoreBox(props: ScoreBoxProps) {
   function renderIcons() {
@@ -116,6 +136,7 @@ function ScoreBox(props: ScoreBoxProps) {
         flexDirection="column"
         bgcolor={getBgColor()}
         borderRadius={2}
+        onClick={props.onClick}
       >
         <Typography variant="h4">{props.numOfPlayers}</Typography>
         {renderIcons()}

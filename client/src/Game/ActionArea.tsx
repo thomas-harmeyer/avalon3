@@ -1,15 +1,32 @@
 import { Game, User } from "@backend/utils"
 import {
+  Face,
+  HikingTwoTone,
+  QuestionMark,
+  QuestionMarkRounded,
+} from "@mui/icons-material"
+import {
   Box,
-  Button,
-  Card,
+  Checkbox,
+  FormControlLabel,
   Grow,
   List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Paper,
+  Radio,
   Typography,
   Zoom,
 } from "@mui/material"
-import { Dispatch, SetStateAction, useCallback, useMemo, useRef } from "react"
+import {
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useCallback,
+  useMemo,
+} from "react"
 import { TransitionGroup } from "react-transition-group"
 
 export const goodRoles = [
@@ -18,7 +35,17 @@ export const goodRoles = [
   "Merlin",
 ] as const
 
+const userIconMap: Record<Game["state"], ReactNode | undefined> = {
+  lobby: <Face />,
+  act: <HikingTwoTone />,
+  done: undefined,
+  guess: <QuestionMark />,
+  suggest: undefined,
+  vote: <QuestionMark />,
+}
+
 type Props = {
+  name: string
   game: Game
   suggestedUsers: string[]
   setSuggestedUsers: Dispatch<SetStateAction<string[]>>
@@ -26,6 +53,7 @@ type Props = {
   setGuessUser: Dispatch<SetStateAction<string | null>>
 }
 function ActionArea({
+  name,
   game,
   suggestedUsers,
   setSuggestedUsers,
@@ -99,90 +127,131 @@ function ActionArea({
     [userOptions.selectedUsers]
   )
 
-  return (
-    <List key={game.state}>
-      <TransitionGroup>
-        {users.map((user, index) => {
-          return (
-            <Zoom
-              style={{
-                transitionDelay: `${index * 250}ms`,
-              }}
-              key={user.id + game.state}
-            >
-              <Box>
-                {userOptions.allowSelection ? (
-                  <ListItemButton
-                    handleClick={handleClick(user)}
-                    user={user}
-                    isActive={isUserSelected(user)}
-                    state={game.state}
-                  />
-                ) : (
-                  <ListItem user={user} state={game.state} />
-                )}
-              </Box>
-            </Zoom>
-          )
-        })}
-      </TransitionGroup>
-    </List>
-  )
-}
+  const overSelected = useMemo(() => {
+    return (
+      userOptions.selectedUsers.length >
+      game.missionProfile[game.rounds.length - 1]
+    )
+  }, [
+    game.missionProfile,
+    game.rounds.length,
+    userOptions.selectedUsers.length,
+  ])
 
-type ListItemProps = {
-  user: User
-  state: Game["state"]
-}
-function ListItem(props: ListItemProps) {
+  //short circuit
+  if (game.state === "done") {
+    const role = game.lobby.users.find((user) => user.name === name)?.role
+    if (!role) return null
+    const won =
+      (game.winner === "good") ===
+      !!goodRoles.find((goodRole) => goodRole === role)
+
+    return (
+      <Grow in>
+        <Box>{won ? "Congratulations, You Win!" : "Sorry, You Lose!"}</Box>
+      </Grow>
+    )
+  }
+
+  if (game.state === "guess") {
+    const role = game.lobby.users.find((user) => user.name === name)?.role
+    if (role !== "Assassin") return null
+  }
+
   return (
-    <Paper
-      sx={{
-        width: 1,
-        my: 1,
-        p: 1,
-        textAlign: "center",
-      }}
-      elevation={20}
-      key={props.user.id + props.state}
-    >
-      <Typography color={(theme) => theme.palette.text.primary} variant="body1">
-        {props.user.name}
-      </Typography>
+    <Paper>
+      <Box p={1}>
+        <List key={game.state}>
+          <TransitionGroup>
+            {users.map((user, index) => {
+              return (
+                <Zoom
+                  style={{
+                    transitionDelay: `${index * 250}ms`,
+                  }}
+                  key={user.id + game.state}
+                >
+                  <ListItem key={user.id + game.state}>
+                    {userOptions.allowSelection ? (
+                      <UserButton
+                        type={game.state === "guess" ? "guess" : "suggest"}
+                        handleClick={handleClick(user)}
+                        user={user}
+                        isActive={isUserSelected(user)}
+                        overSelected={overSelected}
+                      />
+                    ) : (
+                      <UserItem user={user} icon={userIconMap[game.state]} />
+                    )}
+                  </ListItem>
+                </Zoom>
+              )
+            })}
+          </TransitionGroup>
+        </List>
+      </Box>
     </Paper>
   )
 }
 
-type ListItemButtonProps = {
+type UserItemProps = {
+  user: User
+  icon?: ReactNode
+}
+function UserItem(props: UserItemProps) {
+  return (
+    <>
+      {!!props.icon && <ListItemIcon>{props.icon}</ListItemIcon>}
+      <ListItemText>
+        <Typography
+          color={(theme) => theme.palette.text.primary}
+          variant="body1"
+        >
+          {props.user.name}
+        </Typography>
+      </ListItemText>
+    </>
+  )
+}
+
+type UserButton = {
   user: User
   isActive: boolean
   handleClick(): void
-  state: Game["state"]
+  overSelected: boolean
+  type: "suggest" | "guess"
 }
-function ListItemButton(props: ListItemButtonProps) {
+function UserButton(props: UserButton) {
   return (
-    <Paper
-      // variant={props.isActive ? "contained" : "outlined"}
-      sx={{
-        width: 1,
-        my: 1,
-        p: 1,
-        textAlign: "center",
-      }}
-      key={props.user.id + props.state}
-      onClick={props.handleClick}
-    >
-      <Typography
-        color={(theme) =>
-          props.isActive
-            ? theme.palette.text.primary
-            : theme.palette.text.secondary
-        }
-        variant="body1"
-      >
-        {props.user.name}
-      </Typography>
-    </Paper>
+    <FormControlLabel
+      control={
+        <ListItemIcon>
+          {props.type === "suggest" ? (
+            <Checkbox
+              color={props.overSelected ? "error" : "primary"}
+              checked={props.isActive}
+              onChange={props.handleClick}
+            />
+          ) : (
+            <Radio checked={props.isActive} onChange={props.handleClick} />
+          )}
+        </ListItemIcon>
+      }
+      label={
+        <ListItemText>
+          <Typography
+            color={(theme) =>
+              props.isActive
+                ? theme.palette.text.primary
+                : theme.palette.text.secondary
+            }
+            variant="body1"
+          >
+            {props.user.name}
+          </Typography>
+        </ListItemText>
+      }
+    />
   )
 }
 

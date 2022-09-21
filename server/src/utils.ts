@@ -51,14 +51,14 @@ export class User {
   }
 }
 
-type Vote = {
+export type Vote = {
   user: User;
   vote: boolean;
 };
 
 type Action = Vote;
 
-type Mission = {
+export type Mission = {
   suggester: User;
   suggested: User[];
   votes: Vote[];

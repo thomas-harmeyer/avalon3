@@ -41,6 +41,16 @@ const useGame = (name: string | null) => {
     sendJsonMessage(msg)
   }
 
+  const leave = () => {
+    const msg: UserAction = { type: "leave" }
+    sendJsonMessage(msg)
+    navigate("/")
+  }
+
+  const navigateToLobby = () => {
+    navigate("/")
+  }
+
   const vote = (vote: boolean) => {
     const msg: UserAction = { type: "vote", vote }
     sendJsonMessage(msg)
@@ -56,7 +66,17 @@ const useGame = (name: string | null) => {
     sendJsonMessage(msg)
   }
 
-  return { game, sendJsonMessage, suggest, start, vote, act, guess }
+  return {
+    game,
+    sendJsonMessage,
+    suggest,
+    start,
+    vote,
+    act,
+    guess,
+    leave,
+    navigateToLobby,
+  }
 }
 
 export default useGame

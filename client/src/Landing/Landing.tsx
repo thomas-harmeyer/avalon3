@@ -59,7 +59,7 @@ const Landing = () => {
       const msg: AutoAction = {
         type: "join",
         name,
-        lobbyId: parseInt(lobby.id),
+        lobbyId: lobby.id,
       }
       sendMsg(msg)
     },
@@ -122,17 +122,20 @@ const Landing = () => {
           ) : (
             <CardActions>
               <Grid spacing={2} container>
-                {lobbies.map(({ lobby }, index) => (
-                  <Grid item xs={3} key={index}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      onClick={joinLobby(lobby)}
-                    >
-                      {index}
-                    </Button>
-                  </Grid>
-                ))}
+                {lobbies
+                  .filter((lobby) => lobby.state === "lobby")
+                  .map(({ lobby }, index) => (
+                    <Grid item xs={4} key={index} p={1}>
+                      <Button
+                        fullWidth
+                        sx={{ height: 1 }}
+                        variant="outlined"
+                        onClick={joinLobby(lobby)}
+                      >
+                        {lobby.id}
+                      </Button>
+                    </Grid>
+                  ))}
                 <Grid item xs>
                   <Button
                     color="secondary"

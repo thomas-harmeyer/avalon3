@@ -2,26 +2,27 @@ import _ from "lodash";
 import WebSocket, { WebSocketServer } from "ws";
 import { AutoAction, UserAction } from "./request";
 import { Game, removeSocket, User } from "./utils";
+import animalsList from "./commonAnimals";
 
 const wss = new WebSocketServer({ port: 8080 });
 
 console.log("server started");
 
-const games: Game[] = [];
+let games: Game[] = [];
 let landing: WebSocket[] = [];
 function emitToLanding() {
   landing.forEach((socket) => {
-    const data = games.map(removeSocket);
+    const data = games.filter((game) => game).map(removeSocket);
     socket.send(JSON.stringify(data));
   });
 }
 
-const getNewGameId = () => {
-  games.forEach((_, index, a) => {
-    if (index.toString() !== a[index].lobby.id) return index;
-  });
-  return games.length;
-};
+const getNewGameId = () =>
+  _.sample(
+    animalsList.filter(
+      (animal) => !games.find((game) => !!game && game.lobby.id === animal)
+    )
+  ) ?? "Panda";
 
 wss.on("connection", (ws) => {
   let user: User | null = null;
@@ -46,14 +47,16 @@ wss.on("connection", (ws) => {
     if (message.type === "connect") {
       if (!message.name) {
         if (!landing.includes(ws)) landing.push(ws);
-        ws.send(JSON.stringify(games.map(removeSocket)));
+        ws.send(JSON.stringify(games.filter((game) => game).map(removeSocket)));
         return;
       }
       // who needs a db when you have .find
       game =
-        games.find((game) =>
-          game.lobby.users.find((user) => user.name === message.name)
-        ) ?? null;
+        games
+          .filter((game) => game)
+          .find((game) =>
+            game.lobby.users.find((user) => user.name === message.name)
+          ) ?? null;
       if (game === null) {
         console.error("tried to connect to a game that doesn't exist");
         ws.send("/");
@@ -72,19 +75,23 @@ wss.on("connection", (ws) => {
     if (message.type === "create" || message.type === "join") {
       if (message.type === "create") {
         game = new Game(getNewGameId().toString());
-        games[parseInt(game.lobby.id)] = game;
+        games.push(game);
         emitToLanding();
       } else {
-        game = games[message.lobbyId];
+        const tempGame = games.find((g) => g.lobby.id === message.lobbyId);
+        if (!tempGame) return;
+        game = tempGame;
       }
 
-      if (game.state === "lobby") {
-        _.times(4, (n) => {
-          game?.lobby.addPlayer(message.name + n, ws);
-        });
-        user = game.lobby.addPlayer(message.name, ws) ?? null;
-        game.emit();
-      }
+      if (game.state !== "lobby") return;
+
+      console.log("WARNING THIS IS DEV CODE");
+      _.times(4, (n) => {
+        game?.lobby.addPlayer(message.name + n, ws);
+      });
+      user = game.lobby.addPlayer(message.name, ws) ?? null;
+      game.emit();
+
       return;
     }
 
@@ -94,6 +101,12 @@ wss.on("connection", (ws) => {
     if (message.type === "start") {
       if (game.state !== "lobby") return;
       game.start();
+      game.emit();
+      return;
+    }
+    if (message.type === "leave") {
+      if (game.state !== "lobby") return;
+      game.lobby.removePlayer(user.id);
       game.emit();
       return;
     }
@@ -122,5 +135,6 @@ wss.on("connection", (ws) => {
         break;
     }
     game.emit();
+    games = games.filter((game) => game.state !== "done");
   };
 });
