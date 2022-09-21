@@ -1,12 +1,20 @@
 {
   "compilerOptions": {
     "paths": {
-      "@backend/*": ["../server/src/*"]
+      "@backend/*": [
+        "./src/FromBackend"
+      ]
     },
     "target": "ESNext",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "esModuleInterop": false,
@@ -20,7 +28,10 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["src", "../server/src/utils.ts"],
+  "include": [
+    "src",
+    "../server/src/utils.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"
