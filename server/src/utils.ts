@@ -166,7 +166,9 @@ export class Game {
     console.error("WARNING THIS IS A TEST METHOD");
     this.lobby.users.forEach((user) => this.vote(user, vote));
   }
+
   actAll(action: boolean) {
+    console.error("WARNING THIS IS DEV CODE");
     this.rounds
       .at(-1)
       ?.missions.at(-1)

@@ -85,13 +85,9 @@ wss.on("connection", (ws) => {
 
       if (game.state !== "lobby") return;
 
-      console.log("WARNING THIS IS DEV CODE");
-      _.times(4, (n) => {
-        game?.lobby.addPlayer(message.name + n, ws);
-      });
+      // console.log("WARNING THIS IS DEV CODE"); _.times(4, (n) => { game?.lobby.addPlayer(message.name + n, ws); });
       user = game.lobby.addPlayer(message.name, ws) ?? null;
       game.emit();
-
       return;
     }
 
