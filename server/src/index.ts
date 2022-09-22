@@ -13,7 +13,7 @@ let landing: WebSocket[] = [];
 function emitToLanding() {
   landing.forEach((socket) => {
     const data = games.filter((game) => game).map(removeSocket);
-    socket.send(JSON.stringify(data));
+    socket.send(JSON.stringify(data, getCircularReplacer()));
   });
 }
 
@@ -50,7 +50,7 @@ wss.on("connection", (ws) => {
         ws.send(
           JSON.stringify(
             games.filter((game) => game),
-            getCircularReplacer
+            getCircularReplacer()
           )
         );
         return;
