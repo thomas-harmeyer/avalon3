@@ -25,7 +25,7 @@ function App() {
       MuiContainer: {
         styleOverrides: {
           root: {
-            height: "100vh",
+            height: "100%",
           },
         },
       },
