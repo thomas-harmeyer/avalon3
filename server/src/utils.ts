@@ -138,9 +138,13 @@ export class Game {
   }
 
   emit() {
-    this.lobby.users.forEach((user) => {
-      user.websocket?.readyState === WebSocket.OPEN &&
-        user.websocket.send(JSON.stringify(removeSocket(this)));
+    const cleanedGame = removeSocket(this);
+    const getWebsocket = (userId: string) =>
+      this.lobby.users.find((user) => user.id === userId)?.websocket ?? null;
+    cleanedGame.lobby.users.forEach((user) => {
+      const userWebsocket = getWebsocket(user.id);
+      userWebsocket?.readyState === WebSocket.OPEN &&
+        userWebsocket.send(JSON.stringify(cleanedGame));
     });
   }
 
