@@ -2,6 +2,19 @@ import { randomUUID } from "crypto";
 import _ from "lodash";
 import { WebSocket } from "ws";
 
+const getCircularReplacer = () => {
+  const seen = new WeakSet();
+  return (_key: string, value: unknown) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+};
+
 export const removeSocket = (g: Game) => ({
   ...g,
   lobby: {
@@ -144,7 +157,7 @@ export class Game {
     cleanedGame.lobby.users.forEach((user) => {
       const userWebsocket = getWebsocket(user.id);
       userWebsocket?.readyState === WebSocket.OPEN &&
-        userWebsocket.send(JSON.stringify(cleanedGame));
+        userWebsocket.send(JSON.stringify(cleanedGame, getCircularReplacer()));
     });
   }
 
