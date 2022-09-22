@@ -197,6 +197,10 @@ export class Game {
     const currentMission = currentRound?.missions.at(-1);
     if (!currentRound || !currentMission) throw "Missing round or mission";
     if (currentMission.votes.find((vote) => vote.user.id === user.id)) return;
+    if (!user?.name) {
+      console.error("missing user");
+      return;
+    }
     currentMission.votes.push({ user, vote });
     if (currentMission.votes.length === this.lobby.users.length) {
       const goodVotes = currentMission.votes.filter((vote) => vote.vote).length;

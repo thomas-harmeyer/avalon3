@@ -93,6 +93,7 @@ wss.on("connection", (ws) => {
 
     if (!game) throw "no game";
     if (!user) throw "no user";
+    console.log(user);
 
     if (message.type === "start") {
       if (game.state !== "lobby") return;
