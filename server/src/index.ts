@@ -1,7 +1,7 @@
 import _ from "lodash";
 import WebSocket, { WebSocketServer } from "ws";
 import { AutoAction, UserAction } from "./request";
-import { Game, removeSocket, User } from "./utils";
+import { Game, removeSocket, User, getCircularReplacer } from "./utils";
 import animalsList from "./commonAnimals";
 
 const wss = new WebSocketServer({ port: 8080 });
@@ -47,7 +47,12 @@ wss.on("connection", (ws) => {
     if (message.type === "connect") {
       if (!message.name) {
         if (!landing.includes(ws)) landing.push(ws);
-        ws.send(JSON.stringify(games.filter((game) => game).map(removeSocket)));
+        ws.send(
+          JSON.stringify(
+            games.filter((game) => game),
+            getCircularReplacer
+          )
+        );
         return;
       }
       // who needs a db when you have .find

@@ -2,15 +2,9 @@ import { randomUUID } from "crypto";
 import _ from "lodash";
 import { WebSocket } from "ws";
 
-const getCircularReplacer = () => {
-  const seen = new WeakSet();
-  return (_key: string, value: unknown) => {
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
+export const getCircularReplacer = () => {
+  return (key: string, value: unknown) => {
+    if (key === "websocket") return null;
     return value;
   };
 };
