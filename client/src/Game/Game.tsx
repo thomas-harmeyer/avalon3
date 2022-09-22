@@ -28,7 +28,8 @@ const RenderGame = ({
 }) => {
   const [suggestedUsers, setSuggestedUsers] = useState<string[]>([])
   const [guessUser, setGuessUser] = useState<null | string>(null)
-  const { game, act, guess, start, suggest, vote, leave,navigateToLobby } = usedGame
+  const { game, act, guess, start, suggest, vote, leave, navigateToLobby } =
+    usedGame
   const { warning, handleError } = useError(game?.state ?? null)
 
   function handleStartGame() {
@@ -69,14 +70,14 @@ const RenderGame = ({
           />
         </Box>
         <Box display="flex" flexDirection="column" flexGrow={1} flexBasis={1}>
-             <ActionArea
-                name={name}
-                game={game}
-                setGuessUser={setGuessUser}
-                setSuggestedUsers={setSuggestedUsers}
-                guessUser={guessUser}
-                suggestedUsers={suggestedUsers}
-              />
+          <ActionArea
+            name={name}
+            game={game}
+            setGuessUser={setGuessUser}
+            setSuggestedUsers={setSuggestedUsers}
+            guessUser={guessUser}
+            suggestedUsers={suggestedUsers}
+          />
           <Box py={1} flexGrow={1} />
           <Box pb={2} key={game.state}>
             <Warning {...warning} />

@@ -124,11 +124,11 @@ wss.on("connection", (ws) => {
         break;
       case "vote":
         //game.vote(user, message.vote);
-        game.voteAll(message.vote);
+        game.vote(user, message.vote);
         break;
       case "act":
         //game.act(user, message.action);
-        game.actAll(message.action);
+        game.act(user, message.action);
         break;
       case "guess":
         game.guess(message.guess);
