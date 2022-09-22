@@ -13,6 +13,7 @@ import {
   Snackbar,
 } from "@mui/material"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import Div100vh from "react-div-100vh"
 import { useNavigate } from "react-router-dom"
 import useWebSocket, { ReadyState } from "react-use-websocket"
 
@@ -108,56 +109,58 @@ const Landing = () => {
   }, [isInLobby, navigate])
 
   return (
-    <Container>
-      <Box
-        height={1}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Card>
-          <CardHeader title={"Welcome to Avalon, " + name} />
-          {lobbies == null || readyState !== ReadyState.OPEN ? (
-            <LinearProgress />
-          ) : (
-            <CardActions>
-              <Grid spacing={2} container>
-                {lobbies
-                  .filter((lobby) => lobby.state === "lobby")
-                  .map(({ lobby }, index) => (
-                    <Grid item xs={4} key={index} p={1}>
-                      <Button
-                        fullWidth
-                        sx={{ height: 1 }}
-                        variant="outlined"
-                        onClick={joinLobby(lobby)}
-                      >
-                        {lobby.id}
-                      </Button>
-                    </Grid>
-                  ))}
-                <Grid item xs>
-                  <Button
-                    color="secondary"
-                    variant="contained"
-                    onClick={createLobby}
-                    fullWidth
-                  >
-                    create new lobby
-                  </Button>
+    <Div100vh>
+      <Container>
+        <Box
+          height={1}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Card>
+            <CardHeader title={"Welcome to Avalon, " + name} />
+            {lobbies == null || readyState !== ReadyState.OPEN ? (
+              <LinearProgress />
+            ) : (
+              <CardActions>
+                <Grid spacing={2} container>
+                  {lobbies
+                    .filter((lobby) => lobby.state === "lobby")
+                    .map(({ lobby }, index) => (
+                      <Grid item md={4} xs={6} key={index} p={1}>
+                        <Button
+                          fullWidth
+                          sx={{ height: 1 }}
+                          variant="outlined"
+                          onClick={joinLobby(lobby)}
+                        >
+                          {lobby.id}
+                        </Button>
+                      </Grid>
+                    ))}
+                  <Grid item xs>
+                    <Button
+                      color="secondary"
+                      variant="contained"
+                      onClick={createLobby}
+                      fullWidth
+                    >
+                      create new lobby
+                    </Button>
+                  </Grid>
                 </Grid>
-              </Grid>
-            </CardActions>
-          )}
-        </Card>
-      </Box>
-      {showDoubleNameToast && (
-        <DoubleNameToast
-          name={name ?? ""}
-          handleClose={() => setShowDoubleNameToast(false)}
-        />
-      )}
-    </Container>
+              </CardActions>
+            )}
+          </Card>
+        </Box>
+        {showDoubleNameToast && (
+          <DoubleNameToast
+            name={name ?? ""}
+            handleClose={() => setShowDoubleNameToast(false)}
+          />
+        )}
+      </Container>
+    </Div100vh>
   )
 }
 

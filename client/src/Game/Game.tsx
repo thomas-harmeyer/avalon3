@@ -1,5 +1,6 @@
-import { Box, CircularProgress, Container, Paper } from "@mui/material"
+import { Box, CircularProgress, Container } from "@mui/material"
 import { useState } from "react"
+import Div100vh from "react-div-100vh"
 import { errorMessages, useError } from "../Hooks/useError"
 import useGame from "../Hooks/useGame"
 import useName from "../Hooks/useName"
@@ -58,46 +59,48 @@ const RenderGame = ({
   }
 
   return (
-    <Container>
-      <Box flexDirection="column" display="flex" height={1} width={1}>
-        <Navbar game={game} name={name} />
-        <Box pb={3} pt={1}>
-          <ScoreBoard
-            numberOfPlayers={game.lobby.users.length}
-            state={game.state}
-            missionProfile={game.missionProfile}
-            rounds={game.rounds}
-          />
-        </Box>
-        <Box display="flex" flexDirection="column" flexGrow={1} flexBasis={1}>
-          <ActionArea
-            name={name}
-            game={game}
-            setGuessUser={setGuessUser}
-            setSuggestedUsers={setSuggestedUsers}
-            guessUser={guessUser}
-            suggestedUsers={suggestedUsers}
-          />
-          <Box py={1} flexGrow={1} />
-          <Box pb={2} key={game.state}>
-            <Warning {...warning} />
-            <ActionButtons
-              guessUser={guessUser}
-              suggestedUsers={suggestedUsers}
-              name={name}
-              game={game}
-              suggest={handleSuggest}
-              leave={leave}
-              act={act}
-              vote={vote}
-              guess={handleGuess}
-              start={handleStartGame}
-              navigateToLobby={navigateToLobby}
+    <Div100vh>
+      <Container>
+        <Box flexDirection="column" display="flex" height={1} width={1}>
+          <Navbar game={game} name={name} />
+          <Box pb={3} pt={1}>
+            <ScoreBoard
+              numberOfPlayers={game.lobby.users.length}
+              state={game.state}
+              missionProfile={game.missionProfile}
+              rounds={game.rounds}
             />
           </Box>
+          <Box display="flex" flexDirection="column" flexGrow={1} flexBasis={1}>
+            <ActionArea
+              name={name}
+              game={game}
+              setGuessUser={setGuessUser}
+              setSuggestedUsers={setSuggestedUsers}
+              guessUser={guessUser}
+              suggestedUsers={suggestedUsers}
+            />
+            <Box py={1} flexGrow={1} />
+            <Box pb={2} key={game.state}>
+              <Warning {...warning} />
+              <ActionButtons
+                guessUser={guessUser}
+                suggestedUsers={suggestedUsers}
+                name={name}
+                game={game}
+                suggest={handleSuggest}
+                leave={leave}
+                act={act}
+                vote={vote}
+                guess={handleGuess}
+                start={handleStartGame}
+                navigateToLobby={navigateToLobby}
+              />
+            </Box>
+          </Box>
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Div100vh>
   )
 }
 
