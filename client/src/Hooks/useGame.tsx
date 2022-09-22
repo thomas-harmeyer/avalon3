@@ -11,7 +11,9 @@ const useGame = (name: string | null) => {
   const navigate = useNavigate()
   const [game, setGame] = useState<Game | null>(null)
   const { sendJsonMessage, lastJsonMessage, lastMessage, readyState } =
-    useWebSocket(url)
+    useWebSocket(url, {
+      shouldReconnect: () => true,
+    })
 
   useEffect(() => {
     if (!lastMessage) return

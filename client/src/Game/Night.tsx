@@ -47,7 +47,7 @@ export default function Night(props: Props) {
 
   return (
     <Dialog open={!!props.show}>
-      <DialogTitle>Known Roles</DialogTitle>
+      <DialogTitle>You are: {props.user?.role}</DialogTitle>
       <DialogContent>
         <List>
           {knownUsers.map((known) => (
