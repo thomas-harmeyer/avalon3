@@ -42,7 +42,9 @@ const Landing = () => {
     sendJsonMessage: sendMsg,
     lastJsonMessage: lastMsg,
     readyState,
-  } = useWebSocket(url)
+  } = useWebSocket(url, {
+    shouldReconnect: () => true,
+  })
 
   const createLobby = useCallback(() => {
     if (!name) return
