@@ -12,6 +12,14 @@ let games: Game[] = [];
 let landing: WebSocket[] = [];
 const lostUsers: Record<string, number> = {};
 
+function handleRemoveUser(user: User, game: Game) {
+  game.lobby.removePlayer(user.id);
+  if (game.lobby.users.length === 0) {
+    console.log("delete game", game);
+    games = games.filter((g) => game?.lobby.id === g.lobby.id);
+  }
+}
+
 // function to handle when a user dissconnections
 // waits a bit before booting them, and it they reconnect it will not dq them
 const TIMEOUT_DQ_LEN = 3000;
@@ -19,7 +27,8 @@ function handleClose(user: User, game: Game) {
   const timestamp = new Date().getTime();
   setTimeout(() => {
     if (lostUsers[user.id] === timestamp) {
-      game.lobby.removePlayer(user.id);
+      console.log("remove user", user);
+      handleRemoveUser(user, game);
     }
   }, TIMEOUT_DQ_LEN);
 }
@@ -127,8 +136,8 @@ wss.on("connection", (ws) => {
     }
     if (message.type === "leave") {
       if (game.state !== "lobby") return;
-      game.lobby.removePlayer(user.id);
-      game.emit();
+      handleRemoveUser(user, game);
+      if (game) game.emit();
       return;
     }
 
