@@ -1,7 +1,7 @@
 import _ from "lodash";
 import WebSocket, { WebSocketServer } from "ws";
 import { AutoAction, UserAction } from "./request";
-import { Game, removeSocket, User, getCircularReplacer } from "./utils";
+import { Game, User, getCircularReplacer } from "./utils";
 import animalsList from "./commonAnimals";
 
 const wss = new WebSocketServer({ port: 8080 });
@@ -10,10 +10,23 @@ console.log("server started");
 
 let games: Game[] = [];
 let landing: WebSocket[] = [];
+const lostUsers: Record<string, number> = {};
+
+// function to handle when a user dissconnections
+// waits a bit before booting them, and it they reconnect it will not dq them
+const TIMEOUT_DQ_LEN = 3000;
+function handleClose(user: User, game: Game) {
+  const timestamp = new Date().getTime();
+  setTimeout(() => {
+    if (lostUsers[user.id] === timestamp) {
+      game.lobby.removePlayer(user.id);
+    }
+  }, TIMEOUT_DQ_LEN);
+}
+
 function emitToLanding() {
   landing.forEach((socket) => {
-    const data = games.filter((game) => game).map(removeSocket);
-    socket.send(JSON.stringify(data, getCircularReplacer()));
+    socket.send(JSON.stringify(games, getCircularReplacer()));
   });
 }
 
@@ -32,6 +45,11 @@ wss.on("connection", (ws) => {
 
   ws.onclose = () => {
     landing = landing.filter((l) => l === ws);
+    if (user && game) {
+      if (game?.state === "lobby") {
+        handleClose(user, game);
+      }
+    }
     console.log("socket closed");
   };
 
@@ -93,6 +111,7 @@ wss.on("connection", (ws) => {
       // console.log("WARNING THIS IS DEV CODE"); _.times(4, (n) => { game?.lobby.addPlayer(message.name + n, ws); });
       user = game.lobby.addPlayer(message.name, ws) ?? null;
       game.emit();
+      delete lostUsers[user.id];
       return;
     }
 

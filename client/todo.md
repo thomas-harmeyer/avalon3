@@ -1,11 +1,8 @@
 - [x] add icons to scoreboard
-- [ ] scoreboard
-- [ ] navbar
+- [x] scoreboard
+- [x] navbar
 - [x] vote
 - [x] act
 - [x] guess merlin
-- [ ] night menu
+- [x] night menu
 
-
-## Tentative
-- [ ] add hr between selected and not selected users
