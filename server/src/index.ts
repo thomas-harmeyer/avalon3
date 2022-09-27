@@ -138,6 +138,7 @@ wss.on("connection", (ws) => {
       if (game.state !== "lobby") return;
       handleRemoveUser(user, game);
       if (game) game.emit();
+      else emitToLanding();
       return;
     }
 
